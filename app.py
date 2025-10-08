@@ -17,7 +17,7 @@ on_render = os.environ.get('RENDER') is not None
 
 local_server = True
 app = Flask(__name__)
-app.secret_key = 'super-secret-key'
+app.secret_key = os.environ.get('SECRET_KEY', 'super-secret-key')
 app.config['UPLOAD_FOLDER']= params['upload_location']
 if on_render:
     # Use PostgreSQL on Render
@@ -30,6 +30,13 @@ else:
     app.config['SQLALCHEMY_DATABASE_URI'] = params['local_uri']
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Add this after your database configuration
+try:
+    db.create_all()
+    print("Database tables created successfully")
+except Exception as e:
+    print(f"Database connection error: {e}")
 
 db = SQLAlchemy(app)
 
