@@ -14,7 +14,11 @@ on_render = os.environ.get('RENDER') is not None
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'super-secret-key')
-app.config['UPLOAD_FOLDER'] = params['upload_location']
+
+# Fix upload folder path - use relative path and create directory
+upload_folder = './static/assets/img'
+os.makedirs(upload_folder, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = upload_folder
 
 # Database configuration
 if on_render:
@@ -63,16 +67,7 @@ class Team(db.Model):
     email = db.Column(db.String(50), nullable=True)
     date = db.Column(db.DateTime, nullable=True, default=datetime.now)
 
-# Initialize database tables - FIXED VERSION
-@app.before_request
-def create_tables():
-    # This will run before the first request and create tables if they don't exist
-    try:
-        db.create_all()
-    except Exception as e:
-        print(f"Database tables already exist or error: {e}")
-
-# Alternative method: Initialize tables when app starts
+# Initialize database tables
 with app.app_context():
     try:
         db.create_all()
@@ -86,7 +81,20 @@ if not on_render:
     app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.config["DEBUG"] = True
 
-# All your routes remain exactly the same...
+# Helper function for file uploads
+def save_uploaded_file(file):
+    if file and file.filename != '':
+        # Ensure upload directory exists
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+        print(f"File saved to: {file_path}")
+        return filename
+    return None
+
+# All your routes
 @app.route("/")
 def home():
     try:
@@ -150,13 +158,10 @@ def edit(sno):
             content = request.form.get('content')
             img_file = request.form.get('img_file')
 
-            # EXACT SAME UPLOAD LOGIC AS UPLOADER
+            # FIXED UPLOAD LOGIC
             uploaded_file = request.files.get('img_upload')
             if uploaded_file and uploaded_file.filename != '':
-                # This is identical to what uploader does
-                f = uploaded_file
-                f.save(os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(f.filename)))
-                img_file = secure_filename(f.filename)  # Store the filename for database
+                img_file = save_uploaded_file(uploaded_file)
 
             date = datetime.now()
 
@@ -204,9 +209,13 @@ def logout():
 def uploader():
     if ('user' in session and session['user'] == params['admin_user']):
         if request.method == "POST":
-            f= request.files['file1']
-            f.save(os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(f.filename)))
-            return "Uploaded Successfully"
+            f = request.files['file1']
+            filename = save_uploaded_file(f)
+            if filename:
+                return "Uploaded Successfully"
+            else:
+                return "Upload failed"
+    return "Unauthorized", 403
 
 # Team page route
 @app.route("/team")
@@ -226,12 +235,10 @@ def edit_team(sno):
             email = request.form.get('email')
             img_file = request.form.get('img_file')
 
-            # Handle file upload
+            # FIXED UPLOAD LOGIC
             uploaded_file = request.files.get('img_upload')
             if uploaded_file and uploaded_file.filename != '':
-                f = uploaded_file
-                f.save(os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(f.filename)))
-                img_file = secure_filename(f.filename)
+                img_file = save_uploaded_file(uploaded_file)
 
             date = datetime.now()
 
