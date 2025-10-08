@@ -4,7 +4,6 @@
 
     "local_server":"True",
     "local_uri": "mysql://root:@localhost/blog",
-    "prod_uri":  "mysql://root:@localhost/blog",
     "blog_name": "Python coding",
     "gmail-user": "abdul.aits004@gmail.com",
     "gmail-password":"AITS@004",

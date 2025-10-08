@@ -12,16 +12,27 @@ from werkzeug.utils import secure_filename
 with open('config.json', 'r') as c:
     params = json.load(c)["params"]
 
+# Detect if we're running on Render
+on_render = os.environ.get('RENDER') is not None    
+
 local_server = True
 app = Flask(__name__)
 app.secret_key = 'super-secret-key'
 app.config['UPLOAD_FOLDER']= params['upload_location']
-if local_server:
-    app.config['SQLALCHEMY_DATABASE_URI'] = params['local_uri']
+if on_render:
+    # Use PostgreSQL on Render
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url and database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = params['prod_uri']
+    # Use MySQL locally
+    app.config['SQLALCHEMY_DATABASE_URI'] = params['local_uri']
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+
 
 
 class Contacts(db.Model):
@@ -51,12 +62,17 @@ class Team(db.Model):
     email = db.Column(db.String(50), nullable=True)
     date = db.Column(db.DateTime, nullable=True, default=datetime.now)
 
+# Initialize database tables
+@app.before_first_request
+def create_tables():
+    db.create_all()
 
 
 # for auto load template
-app.jinja_env.auto_reload = True
-app.config["TEMPLATES_AUTO_RELOAD"] = True
-app.config["DEBUG"] = True
+if not on_render:
+    app.jinja_env.auto_reload = True
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
+    app.config["DEBUG"] = True
 
 
 @app.route("/")

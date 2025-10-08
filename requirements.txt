@@ -11,7 +11,9 @@ Jinja2==3.1.6
 MarkupSafe==3.0.2
 mysqlclient==2.2.7
 packaging==25.0
+psycopg2-binary==2.9.10
 pygame==2.6.1
+PyMySQL==1.1.2
 SQLAlchemy==2.0.43
 typing_extensions==4.15.0
 Werkzeug==3.1.3
