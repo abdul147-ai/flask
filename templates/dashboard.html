@@ -1,0 +1,647 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Add custom dashboard styles -->
+<style>
+/* Dashboard Layout */
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+    background: #f8f9fa;
+}
+
+/* Sidebar Styles */
+.dashboard-sidebar {
+    width: 280px;
+    background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-header {
+    padding: 2rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+}
+
+.sidebar-header .subheading {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-top: 0.5rem;
+}
+
+.sidebar-menu {
+    padding: 1.5rem 0;
+}
+
+.sidebar-menu .nav-item {
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-menu .nav-link {
+    color: rgba(255, 255, 255, 0.8);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+    text-decoration: none;
+}
+
+.sidebar-menu .nav-link:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    border-left-color: #3498db;
+}
+
+.sidebar-menu .nav-link.active {
+    color: white;
+    background: rgba(52, 152, 219, 0.2);
+    border-left-color: #3498db;
+}
+
+.sidebar-menu .nav-link i {
+    margin-right: 0.75rem;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar-footer {
+    padding: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Main Content Area */
+.dashboard-content {
+    flex: 1;
+    margin-left: 280px;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+/* Top Navigation Bar */
+.dashboard-navbar {
+    background: white;
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar-left h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Main Content */
+.dashboard-main {
+    padding: 2rem;
+}
+
+/* Stats Cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    text-align: center;
+    border-left: 4px solid #3498db;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+}
+
+.stat-card i {
+    font-size: 2.5rem;
+    color: #3498db;
+    margin-bottom: 1rem;
+}
+
+.stat-card h4 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+}
+
+.stat-card p {
+    color: #7f8c8d;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Quick Actions */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.quick-action-btn {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.quick-action-btn:hover {
+    border-color: #3498db;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.2);
+    text-decoration: none;
+    color: inherit;
+}
+
+.quick-action-btn i {
+    font-size: 2rem;
+    color: #3498db;
+    margin-bottom: 0.5rem;
+}
+
+.quick-action-btn h5 {
+    margin: 0;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* Dashboard Cards */
+.dashboard-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 2rem;
+    border: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.card-header {
+    background: white;
+    border-bottom: 1px solid #e9ecef;
+    padding: 1.5rem;
+    border-radius: 10px 10px 0 0 !important;
+    display: flex;
+    justify-content: between;
+    align-items: center;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Table Styles */
+.table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.dashboard-table {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.dashboard-table .table {
+    margin: 0;
+    border: none;
+}
+
+.dashboard-table .table th {
+    background: #f8f9fa;
+    border-bottom: 2px solid #3498db;
+    font-weight: 600;
+    color: #2c3e50;
+    padding: 1rem;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+}
+
+.dashboard-table .table td {
+    padding: 1rem;
+    vertical-align: middle;
+    border-color: #e9ecef;
+}
+
+.dashboard-table .table tbody tr:hover {
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* File Uploader */
+.file-uploader {
+    background: #f8f9fa;
+    border: 2px dashed #bdc3c7;
+    border-radius: 10px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.file-uploader:hover {
+    border-color: #3498db;
+    background: rgba(52, 152, 219, 0.05);
+}
+
+.file-uploader input[type="file"] {
+    margin: 1rem 0;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: white;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .dashboard-sidebar {
+        width: 100%;
+        transform: translateX(-100%);
+        position: fixed;
+    }
+
+    .dashboard-sidebar.mobile-open {
+        transform: translateX(0);
+    }
+
+    .dashboard-content {
+        margin-left: 0;
+    }
+
+    .mobile-menu-toggle {
+        display: block !important;
+    }
+
+    .dashboard-main {
+        padding: 1rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: #2c3e50;
+    cursor: pointer;
+}
+
+/* Custom scrollbar */
+.dashboard-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dashboard-sidebar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.dashboard-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.dashboard-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+</style>
+
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <nav class="dashboard-sidebar">
+        <div class="sidebar-header">
+            <h3>Admin Panel</h3>
+            <span class="subheading">Content Management System</span>
+        </div>
+
+        <div class="sidebar-menu">
+            <a class="nav-link active" href="#posts-section">
+                <i class="fas fa-newspaper"></i>
+                Posts Management
+            </a>
+            <a class="nav-link" href="#team-section">
+                <i class="fas fa-users"></i>
+                Team Management
+            </a>
+            <a class="nav-link" href="#file-upload-section">
+                <i class="fas fa-upload"></i>
+                File Uploader
+            </a>
+            <a class="nav-link" href="/logout">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </a>
+        </div>
+
+
+    </nav>
+
+    <!-- Main Content -->
+    <main class="dashboard-content">
+        <!-- Top Navigation -->
+        <nav class="dashboard-navbar">
+            <div class="navbar-left">
+                <button class="mobile-menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1>Dashboard Overview</h1>
+            </div>
+            <div class="navbar-right">
+                <span class="text-muted">Welcome, Administrator</span>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <div class="dashboard-main">
+            <!-- Quick Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-newspaper"></i>
+                    <h4>{{ posts|length }}</h4>
+                    <p>Total Posts</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-users"></i>
+                    <h4>{{ team|length }}</h4>
+                    <p>Team Members</p>
+                </div>
+
+                <div class="stat-card">
+                    <i class="fas fa-check-circle"></i>
+                    <h4>{{ posts|length }}</h4>
+                    <p>Active Content</p>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <a href="/edit/0" class="quick-action-btn">
+                    <i class="fas fa-plus-circle"></i>
+                    <h5>Add New Post</h5>
+                </a>
+                <a href="/edit_team/0" class="quick-action-btn">
+                    <i class="fas fa-user-plus"></i>
+                    <h5>Add Team Member</h5>
+                </a>
+                <a href="#file-upload-section" class="quick-action-btn">
+                    <i class="fas fa-upload"></i>
+                    <h5>Upload Files</h5>
+                </a>
+                <a href="/logout" class="quick-action-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <h5>Logout</h5>
+                </a>
+            </div>
+
+            <!-- Posts Management Section -->
+            <section id="posts-section">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-newspaper"></i> Posts Management</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover dashboard-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Title</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for post in posts %}
+                                    <tr>
+                                        <td><strong>{{ post.sno }}</strong></td>
+                                        <td>{{ post.title }}</td>
+                                        <td>{{ post.date }}</td>
+                                        <td class="action-buttons">
+                                            <a href="/edit/{{ post.sno }}" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                            <a href="/delete/{{ post.sno }}" class="btn btn-danger btn-sm"
+                                               onclick="return confirm('Are you sure you want to delete this post?')">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- File Upload Section -->
+            <section id="file-upload-section">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-upload"></i> File Uploader</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="file-uploader">
+                            <form action="/uploader" method="post" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label for="fileInput" class="form-label fw-bold">Choose file to upload</label>
+                                    <input class="form-control" type="file" name="file1" id="fileInput" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-upload me-2"></i>Upload File
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Team Management Section -->
+            <section id="team-section">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-users"></i> Team Management</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover dashboard-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Position</th>
+                                        <th>Email</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for team_member in team %}
+                                    <tr>
+                                        <td><strong>{{ team_member.sno }}</strong></td>
+                                        <td>{{ team_member.name }}</td>
+                                        <td>{{ team_member.position }}</td>
+                                        <td>{{ team_member.email }}</td>
+                                        <td>{{ team_member.date.strftime('%Y-%m-%d') }}</td>
+                                        <td class="action-buttons">
+                                            <a href="/edit_team/{{ team_member.sno }}" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                            <a href="/delete_team/{{ team_member.sno }}" class="btn btn-danger btn-sm"
+                                               onclick="return confirm('Are you sure you want to delete this team member?')">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<!-- JavaScript for mobile menu and smooth scrolling -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileToggle = document.querySelector('.mobile-menu-toggle');
+    const sidebar = document.querySelector('.dashboard-sidebar');
+
+    // Mobile menu toggle
+    if (mobileToggle) {
+        mobileToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('mobile-open');
+        });
+    }
+
+    // Smooth scrolling for sidebar links
+    const sidebarLinks = document.querySelectorAll('.sidebar-menu .nav-link');
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (this.getAttribute('href').startsWith('#')) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+
+                // Update active link
+                sidebarLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+
+                // Close mobile sidebar after clicking
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('mobile-open');
+                }
+            }
+        });
+    });
+
+    // Update active link on scroll
+    const sections = document.querySelectorAll('section');
+    window.addEventListener('scroll', function() {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.clientHeight;
+            if (scrollY >= (sectionTop - 100)) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        sidebarLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + current) {
+                link.classList.add('active');
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}

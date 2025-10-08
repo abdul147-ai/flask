@@ -1,0 +1,18 @@
+{
+  "params":
+  {
+
+    "local_server":"True",
+    "local_uri": "mysql://root:@localhost/blog",
+    "prod_uri":  "mysql://root:@localhost/blog",
+    "blog_name": "Python coding",
+    "gmail-user": "abdul.aits004@gmail.com",
+    "gmail-password":"AITS@004",
+    "about_text": "Hi this is abdul and I create my first flask website",
+    "no_of_posts": 2,
+    "admin_user": "admin",
+    "admin_password": "admin",
+    "upload_location": "C:\\Users\\abdul\\PycharmProjects\\flask\\static\\assets\\img"
+  }
+
+}
