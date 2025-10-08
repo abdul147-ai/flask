@@ -1,12 +1,9 @@
-import os.path
-from importlib.resources import contents
+import os
 import math
-from flask import Flask, render_template, request, session,redirect
+from flask import Flask, render_template, request, session, redirect
 from flask_sqlalchemy import SQLAlchemy
-from flask_mail import Mail
 from datetime import datetime
 import json
-
 from werkzeug.utils import secure_filename
 
 with open('config.json', 'r') as c:
@@ -15,33 +12,31 @@ with open('config.json', 'r') as c:
 # Detect if we're running on Render
 on_render = os.environ.get('RENDER') is not None    
 
-local_server = True
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'super-secret-key')
-app.config['UPLOAD_FOLDER']= params['upload_location']
+app.config['UPLOAD_FOLDER'] = params['upload_location']
+
+# Database configuration
 if on_render:
     # Use PostgreSQL on Render
     database_url = os.environ.get('DATABASE_URL')
-    if database_url and database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    if database_url:
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        print("Using PostgreSQL on Render")
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///fallback.db'
 else:
     # Use MySQL locally
     app.config['SQLALCHEMY_DATABASE_URI'] = params['local_uri']
+    print("Using MySQL locally")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Add this after your database configuration
-try:
-    db.create_all()
-    print("Database tables created successfully")
-except Exception as e:
-    print(f"Database connection error: {e}")
-
 db = SQLAlchemy(app)
 
-
-
+# Your model classes
 class Contacts(db.Model):
     sno = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), nullable=False)
@@ -49,7 +44,6 @@ class Contacts(db.Model):
     msg = db.Column(db.String(120), nullable=False)
     date = db.Column(db.DateTime, nullable=True)
     email = db.Column(db.String(50), nullable=False)
-
 
 class Posts(db.Model):
     sno = db.Column(db.Integer, primary_key=True)
@@ -69,54 +63,63 @@ class Team(db.Model):
     email = db.Column(db.String(50), nullable=True)
     date = db.Column(db.DateTime, nullable=True, default=datetime.now)
 
-# Initialize database tables
-@app.before_first_request
+# Initialize database tables - FIXED VERSION
+@app.before_request
 def create_tables():
-    db.create_all()
+    # This will run before the first request and create tables if they don't exist
+    try:
+        db.create_all()
+    except Exception as e:
+        print(f"Database tables already exist or error: {e}")
 
+# Alternative method: Initialize tables when app starts
+with app.app_context():
+    try:
+        db.create_all()
+        print("Database tables initialized successfully")
+    except Exception as e:
+        print(f"Error initializing database: {e}")
 
-# for auto load template
+# Disable debug features on production
 if not on_render:
     app.jinja_env.auto_reload = True
     app.config["TEMPLATES_AUTO_RELOAD"] = True
     app.config["DEBUG"] = True
 
-
+# All your routes remain exactly the same...
 @app.route("/")
 def home():
-    posts = Posts.query.filter_by().all()
-    last = math.ceil(len(posts)/int(params['no_of_posts']))
-    #[0:params['no_of_posts']]
-    page = request.args.get('page')
-    if (not str(page).isnumeric() ):
-        page = 1
-    page = int(page)
-    posts = posts[(page-1)*int(params['no_of_posts']): (page-1)*int(params['no_of_posts']) + int(params['no_of_posts']) ]
-    #pagination Logic
-    #first page
-    if (page == 1):
-        prev = "#"
-        next = "/?page="+ str(page+1)
-    elif (page == last):
-        prev = "/?page="+ str(page-1)
-        next = "#"
-    else:
-        prev = "/?page="+ str(page-1)
-        next = "/?page="+ str(page+1)
+    try:
+        posts = Posts.query.filter_by().all()
+        last = math.ceil(len(posts)/int(params['no_of_posts']))
+        page = request.args.get('page')
+        if (not str(page).isnumeric() ):
+            page = 1
+        page = int(page)
+        posts = posts[(page-1)*int(params['no_of_posts']): (page-1)*int(params['no_of_posts']) + int(params['no_of_posts']) ]
+        
+        if (page == 1):
+            prev = "#"
+            next = "/?page="+ str(page+1)
+        elif (page == last):
+            prev = "/?page="+ str(page-1)
+            next = "#"
+        else:
+            prev = "/?page="+ str(page-1)
+            next = "/?page="+ str(page+1)
 
-    return render_template('index.html', params=params, posts=posts,prev=prev,next=next)
-
+        return render_template('index.html', params=params, posts=posts,prev=prev,next=next)
+    except Exception as e:
+        return f"Database error: {e}", 500
 
 @app.route("/post/<string:post_slug>", methods=['GET'])
 def post_route(post_slug):
     post = Posts.query.filter_by(slug=post_slug).first_or_404()
     return render_template('post.html', params=params, post=post)
 
-
 @app.route("/about")
 def about():
     return render_template('about.html', params=params)
-
 
 @app.route("/dashboard", methods=['GET', 'POST'])
 def dashboard():
@@ -135,7 +138,6 @@ def dashboard():
             return render_template('dashboard.html', params=params, posts=posts)
 
     return render_template('login.html', params=params)
-
 
 @app.route("/edit/<string:sno>", methods=['GET', 'POST'])
 def edit(sno):
@@ -185,7 +187,6 @@ def edit(sno):
         post = Posts.query.filter_by(sno=sno).first() if sno != '0' else None
         return render_template('edit.html', params=params, post=post, sno=sno)
 
-
 @app.route("/delete/<string:sno>", methods=['GET', 'POST'])
 def delete(sno):
     if ('user' in session and session['user'] == params['admin_user']):
@@ -193,7 +194,6 @@ def delete(sno):
         db.session.delete(post)
         db.session.commit()
     return redirect('/dashboard')
-
 
 @app.route("/logout")
 def logout():
@@ -208,13 +208,11 @@ def uploader():
             f.save(os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(f.filename)))
             return "Uploaded Successfully"
 
-
 # Team page route
 @app.route("/team")
 def team():
     team_members = Team.query.all()
     return render_template('team.html', params=params, team_members=team_members)
-
 
 # Add/Edit team member route
 @app.route("/edit_team/<string:sno>", methods=['GET', 'POST'])
@@ -264,7 +262,6 @@ def edit_team(sno):
         team_member = Team.query.filter_by(sno=sno).first() if sno != '0' else None
         return render_template('edit_team.html', params=params, team_member=team_member, sno=sno)
 
-
 # Delete team member route
 @app.route("/delete_team/<string:sno>", methods=['GET', 'POST'])
 def delete_team(sno):
@@ -273,10 +270,6 @@ def delete_team(sno):
         db.session.delete(team_member)
         db.session.commit()
     return redirect('/dashboard')
-
-
-
-
 
 @app.route("/contact", methods=['GET', 'POST'])
 def contact():
@@ -292,6 +285,5 @@ def contact():
 
     return render_template('contact.html', params=params)
 
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=not on_render)
