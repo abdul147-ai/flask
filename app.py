@@ -51,19 +51,19 @@ class Contacts(db.Model):
 
 class Posts(db.Model):
     sno = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(80), nullable=False)
+    title = db.Column(db.String(120), nullable=False)
     slug = db.Column(db.String(21), nullable=False)
-    content = db.Column(db.String(1200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
     tagline = db.Column(db.String(120), nullable=False)
     date = db.Column(db.DateTime, nullable=True)
-    img_file = db.Column(db.String(20), nullable=True)
+    img_file = db.Column(db.String(50), nullable=True)
 
 class Team(db.Model):
     sno = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), nullable=False)
     position = db.Column(db.String(80), nullable=False)
-    bio = db.Column(db.String(200), nullable=False)
-    img_file = db.Column(db.String(20), nullable=True)
+    bio = db.Column(db.String(500), nullable=False)
+    img_file = db.Column(db.String(100), nullable=True)
     email = db.Column(db.String(50), nullable=True)
     date = db.Column(db.DateTime, nullable=True, default=datetime.now)
 
